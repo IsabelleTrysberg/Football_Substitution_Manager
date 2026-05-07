@@ -6,48 +6,6 @@ st.set_page_config(page_title="Fotbollsbyten", layout="wide")
 
 st.title("Fotbollsbyten och positioner")
 
-st.markdown("""
-<style>
-.position-box {
-    border: 1px solid #d1d5db;
-    border-radius: 10px;
-    padding: 8px;
-    margin-bottom: 12px;
-    background-color: #f8fafc;
-}
-
-.position-title {
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    color: black;
-}
-
-.player-name {
-    font-size: 14px;
-    font-weight: 600;
-    text-align: center;
-    color: black;
-    margin-top: 6px;
-}
-
-.count-number {
-    font-size: 20px;
-    font-weight: bold;
-    text-align: center;
-    color: black;
-    padding-top: 4px;
-}
-
-div.stButton > button {
-    min-height: 30px;
-    height: 30px;
-    font-size: 14px;
-    padding: 0px 4px;
-}
-</style>
-""", unsafe_allow_html=True)
-
 positions = [
     "Målvakt",
     "Back",
@@ -64,8 +22,8 @@ if "players" not in st.session_state:
 if "players_locked" not in st.session_state:
     st.session_state.players_locked = False
 
-if "counts" not in st.session_state:
-    st.session_state.counts = {}
+if "counts_df" not in st.session_state:
+    st.session_state.counts_df = pd.DataFrame()
 
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
@@ -164,7 +122,7 @@ if not st.session_state.players_locked:
 
     player_input = st.text_area(
         "Skriv spelarnamn separerade med kommatecken",
-        placeholder="Exempel: Alice, Elsa, Maja, Nora, Sara",
+        placeholder="Exempel: Rebecca, Saga, Juni, Elsa",
         height=100
     )
 
@@ -173,11 +131,11 @@ if not st.session_state.players_locked:
         st.session_state.players = players
         st.session_state.players_locked = True
 
-        for position in positions:
-            for player in players:
-                key = f"{position}_{player}"
-                if key not in st.session_state.counts:
-                    st.session_state.counts[key] = 0
+        st.session_state.counts_df = pd.DataFrame(
+            0,
+            index=players,
+            columns=positions
+        )
 
         st.rerun()
 
@@ -185,73 +143,42 @@ else:
     st.subheader("1. Spelare")
     st.write(", ".join(st.session_state.players))
 
-    if st.button("Ändra spelare", use_container_width=True):
+    if st.button("Ändra spelare / ny match", use_container_width=True):
         st.session_state.players_locked = False
+        st.session_state.players = []
+        st.session_state.counts_df = pd.DataFrame()
         st.rerun()
 
-players = st.session_state.players
 
+# ---------------- POSITIONSTABELL ----------------
 
-# ---------------- MOBILANPASSAD TABELL ----------------
+if st.session_state.players_locked and not st.session_state.counts_df.empty:
+    st.subheader("2. Positionstabell")
 
-# ---------------- POSITIONER ----------------
-
-if players and st.session_state.players_locked:
-    st.subheader("2. Positioner")
-
-    for position in positions:
-        st.markdown(
-            f"""
-            <div class="position-box">
-                <div class="position-title">{position}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        for player in players:
-            key = f"{position}_{player}"
-
-            st.markdown(
-                f"<div class='player-name'>{player}</div>",
-                unsafe_allow_html=True
+    edited_df = st.data_editor(
+        st.session_state.counts_df,
+        use_container_width=True,
+        num_rows="fixed",
+        key="position_editor",
+        column_config={
+            position: st.column_config.NumberColumn(
+                position,
+                min_value=0,
+                step=1
             )
+            for position in positions
+        }
+    )
 
-            minus_col, number_col, plus_col = st.columns([1, 1, 1], gap="small")
+    st.session_state.counts_df = edited_df
 
-            with minus_col:
-                if st.button("−", key=f"minus_{key}", use_container_width=True):
-                    if st.session_state.counts[key] > 0:
-                        st.session_state.counts[key] -= 1
-                    st.rerun()
+    st.info("Tryck på en siffra i tabellen och ändra antalet manuellt.")
 
-            with number_col:
-                st.markdown(
-                    f"<div class='count-number'>{st.session_state.counts[key]}</div>",
-                    unsafe_allow_html=True
-                )
-
-            with plus_col:
-                if st.button("+", key=f"plus_{key}", use_container_width=True):
-                    st.session_state.counts[key] += 1
-                    st.rerun()
-
-            st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
-
-        st.divider()
-
-    st.subheader("3. Sammanfattning")
-
-    data = []
-    for position in positions:
-        row = {"Position": position}
-        for player in players:
-            key = f"{position}_{player}"
-            row[player] = st.session_state.counts[key]
-        data.append(row)
-
-    df = pd.DataFrame(data)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.subheader("3. Översikt")
+    st.dataframe(
+        st.session_state.counts_df,
+        use_container_width=True
+    )
 
 
 # ---------------- AUTOUPPDATERING ----------------
