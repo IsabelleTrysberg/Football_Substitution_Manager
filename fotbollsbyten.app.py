@@ -6,6 +6,48 @@ st.set_page_config(page_title="Fotbollsbyten", layout="wide")
 
 st.title("Fotbollsbyten och positioner")
 
+st.markdown("""
+<style>
+.position-box {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 12px;
+    background-color: #f8fafc;
+}
+
+.position-title {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: black;
+}
+
+.player-name {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: black;
+    margin-top: 6px;
+}
+
+.count-number {
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    color: black;
+    padding-top: 4px;
+}
+
+div.stButton > button {
+    min-height: 30px;
+    height: 30px;
+    font-size: 14px;
+    padding: 0px 4px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 positions = [
     "Målvakt",
     "Back",
@@ -152,53 +194,10 @@ players = st.session_state.players
 
 # ---------------- MOBILANPASSAD TABELL ----------------
 
+# ---------------- POSITIONER ----------------
+
 if players and st.session_state.players_locked:
     st.subheader("2. Positioner")
-
-    st.markdown("""
-        <style>
-
-        .position-box {
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            padding: 8px;
-            margin-bottom: 12px;
-            background-color: #f8fafc;
-        }
-
-        .position-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            text-align: center;
-            color: black;
-        }
-
-        .player-name {
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;
-            padding-top: 6px;
-            color: black;
-        }
-
-        .count-number {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            padding-top: 6px;
-            color: black;
-        }
-
-        div.stButton > button {
-            min-height: 28px;
-            height: 28px;
-            font-size: 14px;
-            padding: 0px 4px;
-        }
-
-        </style>
-    """, unsafe_allow_html=True)
 
     for position in positions:
         st.markdown(
@@ -213,33 +212,31 @@ if players and st.session_state.players_locked:
         for player in players:
             key = f"{position}_{player}"
 
-            player_col, controls_col = st.columns([2, 3])
+            st.markdown(
+                f"<div class='player-name'>{player}</div>",
+                unsafe_allow_html=True
+            )
 
-            with player_col:
+            minus_col, number_col, plus_col = st.columns([1, 1, 1], gap="small")
+
+            with minus_col:
+                if st.button("−", key=f"minus_{key}", use_container_width=True):
+                    if st.session_state.counts[key] > 0:
+                        st.session_state.counts[key] -= 1
+                    st.rerun()
+
+            with number_col:
                 st.markdown(
-                    f"<div class='player-name'>{player}</div>",
+                    f"<div class='count-number'>{st.session_state.counts[key]}</div>",
                     unsafe_allow_html=True
                 )
 
-            with controls_col:
-                minus_col, number_col, plus_col = st.columns([1, 1, 1])
+            with plus_col:
+                if st.button("+", key=f"plus_{key}", use_container_width=True):
+                    st.session_state.counts[key] += 1
+                    st.rerun()
 
-                with minus_col:
-                    if st.button("−", key=f"minus_{key}"):
-                        if st.session_state.counts[key] > 0:
-                            st.session_state.counts[key] -= 1
-                        st.rerun()
-
-                with number_col:
-                    st.markdown(
-                        f"<div class='count-number'>{st.session_state.counts[key]}</div>",
-                        unsafe_allow_html=True
-                    )
-
-                with plus_col:
-                    if st.button("＋", key=f"plus_{key}"):
-                        st.session_state.counts[key] += 1
-                        st.rerun()
+            st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
 
         st.divider()
 
