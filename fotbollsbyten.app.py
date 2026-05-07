@@ -85,12 +85,14 @@ seconds = int(current_time % 60)
 st.markdown(
     f"""
     <div style="
-        font-size:52px;
+        font-size:46px;
         font-weight:bold;
         text-align:center;
-        padding:18px;
-        border:1px solid white;
-        background-color:#334155;
+        padding:14px;
+        border:1px solid #d1d5db;
+        background-color:#f8fafc;
+        color:black;
+        border-radius:10px;
         margin-bottom:15px;
     ">
         {minutes:02}:{seconds:02}
@@ -155,40 +157,46 @@ if players and st.session_state.players_locked:
 
     st.markdown("""
         <style>
+
         .position-box {
-            border: 1px solid #ffffff;
+            border: 1px solid #d1d5db;
             border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 18px;
-            background-color: #334155;
+            padding: 8px;
+            margin-bottom: 12px;
+            background-color: #f8fafc;
         }
 
         .position-title {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-align: center;
+            color: black;
         }
 
         .player-name {
-            font-size: 18px;
-            font-weight: bold;
-            padding-top: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            padding-top: 6px;
+            color: black;
         }
 
         .count-number {
-            font-size: 26px;
+            font-size: 18px;
             font-weight: bold;
             text-align: center;
-            padding-top: 4px;
+            padding-top: 6px;
+            color: black;
         }
 
         div.stButton > button {
-            min-height: 34px;
-            height: 34px;
-            font-size: 16px;
-            padding: 2px 6px;
+            min-height: 28px;
+            height: 28px;
+            font-size: 14px;
+            padding: 0px 4px;
         }
+
         </style>
     """, unsafe_allow_html=True)
 
@@ -205,7 +213,7 @@ if players and st.session_state.players_locked:
         for player in players:
             key = f"{position}_{player}"
 
-            player_col, minus_col, number_col, plus_col = st.columns([3, 1, 1, 1])
+            player_col, minus_col, number_col, plus_col = st.columns([2, 1, 1, 1])
 
             with player_col:
                 st.markdown(
@@ -244,3 +252,10 @@ if players and st.session_state.players_locked:
 
     df = pd.DataFrame(data)
     st.dataframe(df, use_container_width=True, hide_index=True)
+
+
+# ---------------- AUTOUPPDATERING ----------------
+
+if st.session_state.timer_running:
+    time.sleep(1)
+    st.rerun()
