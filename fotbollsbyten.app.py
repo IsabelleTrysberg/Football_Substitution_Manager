@@ -213,30 +213,33 @@ if players and st.session_state.players_locked:
         for player in players:
             key = f"{position}_{player}"
 
-            player_col, minus_col, number_col, plus_col = st.columns([2, 1, 1, 1])
+            player_col, controls_col = st.columns([2, 3])
 
             with player_col:
                 st.markdown(
                     f"<div class='player-name'>{player}</div>",
                     unsafe_allow_html=True
-                )
+    )
 
-            with minus_col:
-                if st.button("−", key=f"minus_{key}"):
-                    if st.session_state.counts[key] > 0:
-                        st.session_state.counts[key] -= 1
-                    st.rerun()
+            with controls_col:
+                minus_col, number_col, plus_col = st.columns([1, 1, 1])
 
-            with number_col:
-                st.markdown(
-                    f"<div class='count-number'>{st.session_state.counts[key]}</div>",
-                    unsafe_allow_html=True
-                )
+                with minus_col:
+                    if st.button("−", key=f"minus_{key}"):
+                        if st.session_state.counts[key] > 0:
+                            st.session_state.counts[key] -= 1
+                        st.rerun()
 
-            with plus_col:
-                if st.button("＋", key=f"plus_{key}"):
-                    st.session_state.counts[key] += 1
-                    st.rerun()
+                with number_col:
+                    st.markdown(
+                        f"<div class='count-number'>{st.session_state.counts[key]}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                with plus_col:
+                    if st.button("＋", key=f"plus_{key}"):
+                        st.session_state.counts[key] += 1
+                        st.rerun()
 
         st.divider()
 
