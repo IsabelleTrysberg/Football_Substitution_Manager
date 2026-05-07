@@ -180,6 +180,12 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
         use_container_width=True
     )
 
+    st.download_button(
+    "Ladda ner som CSV",
+    st.session_state.counts_df.to_csv().encode("utf-8"),
+    "match_oversikt.csv",
+    "text/csv"
+    )
 
 # ---------------- AUTOUPPDATERING ----------------
 
