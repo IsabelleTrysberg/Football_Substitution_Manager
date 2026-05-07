@@ -90,7 +90,7 @@ st.markdown(
         text-align:center;
         padding:18px;
         border:1px solid white;
-        background-color:#111827;
+        background-color:#334155;
         margin-bottom:15px;
     ">
         {minutes:02}:{seconds:02}
@@ -148,99 +148,89 @@ else:
 players = st.session_state.players
 
 
-# ---------------- TABELL ----------------
+# ---------------- MOBILANPASSAD TABELL ----------------
 
 if players and st.session_state.players_locked:
-    st.subheader("2. Positionstabell")
+    st.subheader("2. Positioner")
 
     st.markdown("""
         <style>
-        .header-cell {
-            font-weight: bold;
-            font-size: 18px;
-            background-color: #1f2937;
+        .position-box {
+            border: 1px solid #ffffff;
+            border-radius: 10px;
             padding: 12px;
-            border-radius: 6px;
+            margin-bottom: 18px;
+            background-color: #334155;
         }
 
-        .position-name {
+        .position-title {
+            font-size: 22px;
             font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .player-name {
             font-size: 18px;
+            font-weight: bold;
+            padding-top: 8px;
+        }
+
+        .count-number {
+            font-size: 26px;
+            font-weight: bold;
+            text-align: center;
+            padding-top: 4px;
         }
 
         div.stButton > button {
-            padding: 2px 8px;
+            min-height: 34px;
+            height: 34px;
             font-size: 16px;
-            min-height: 32px;
-            height: 32px;
-            width: 100%;
-            border-radius: 8px;
+            padding: 2px 6px;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    cell_style = """
-        border: 1px solid white;
-        padding: 10px;
-        text-align: center;
-        background-color: #111827;
-    """
-
-    header_cols = st.columns([1.5] + [1] * len(players))
-
-    with header_cols[0]:
+    for position in positions:
         st.markdown(
-            f"<div style='{cell_style}'><div class='header-cell'>Position</div></div>",
+            f"""
+            <div class="position-box">
+                <div class="position-title">{position}</div>
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-    for i, player in enumerate(players):
-        with header_cols[i + 1]:
-            st.markdown(
-                f"<div style='{cell_style}'><div class='header-cell'>{player}</div></div>",
-                unsafe_allow_html=True
-            )
-
-    for position in positions:
-        row_cols = st.columns([1.5] + [1] * len(players))
-
-        with row_cols[0]:
-            st.markdown(
-                f"<div style='{cell_style}'><div class='position-name'>{position}</div></div>",
-                unsafe_allow_html=True
-            )
-
-        for i, player in enumerate(players):
+        for player in players:
             key = f"{position}_{player}"
 
-            with row_cols[i + 1]:
-                minus_col, number_col, plus_col = st.columns([1, 1, 1])
+            player_col, minus_col, number_col, plus_col = st.columns([3, 1, 1, 1])
 
-                with minus_col:
-                    if st.button("−", key=f"minus_{key}"):
-                        if st.session_state.counts[key] > 0:
-                            st.session_state.counts[key] -= 1
-                        st.rerun()
+            with player_col:
+                st.markdown(
+                    f"<div class='player-name'>{player}</div>",
+                    unsafe_allow_html=True
+                )
 
-                with number_col:
-                    st.markdown(
-                        f"""
-                        <div style="
-                            text-align:center;
-                            font-size:32px;
-                            font-weight:bold;
-                            padding-top:8px;
-                        ">
-                            {st.session_state.counts[key]}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+            with minus_col:
+                if st.button("−", key=f"minus_{key}"):
+                    if st.session_state.counts[key] > 0:
+                        st.session_state.counts[key] -= 1
+                    st.rerun()
 
-                with plus_col:
-                    if st.button("＋", key=f"plus_{key}"):
-                        st.session_state.counts[key] += 1
-                        st.rerun()
+            with number_col:
+                st.markdown(
+                    f"<div class='count-number'>{st.session_state.counts[key]}</div>",
+                    unsafe_allow_html=True
+                )
+
+            with plus_col:
+                if st.button("＋", key=f"plus_{key}"):
+                    st.session_state.counts[key] += 1
+                    st.rerun()
+
+        st.divider()
 
     st.subheader("3. Sammanfattning")
 
@@ -254,10 +244,3 @@ if players and st.session_state.players_locked:
 
     df = pd.DataFrame(data)
     st.dataframe(df, use_container_width=True, hide_index=True)
-
-
-# ---------------- AUTOUPPDATERING ----------------
-
-if st.session_state.timer_running:
-    time.sleep(1)
-    st.rerun()
