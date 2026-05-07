@@ -219,7 +219,7 @@ if players and st.session_state.players_locked:
                 st.markdown(
                     f"<div class='player-name'>{player}</div>",
                     unsafe_allow_html=True
-    )
+                )
 
             with controls_col:
                 minus_col, number_col, plus_col = st.columns([1, 1, 1])
