@@ -42,20 +42,24 @@ if not st.session_state.players_locked:
     if st.button("Klar", use_container_width=True):
         players = [name.strip() for name in player_input.split(",") if name.strip()]
 
-        st.session_state.players = players
-        st.session_state.players_locked = True
+        if players:
+            st.session_state.players = players
+            st.session_state.players_locked = True
 
-        st.session_state.counts_df = pd.DataFrame(
-            0,
-            index=players,
-            columns=positions
-        )
+            st.session_state.counts_df = pd.DataFrame(
+                0,
+                index=players,
+                columns=positions
+            )
 
-        st.session_state.next_subs = {
-            position: "" for position in positions
-        }
+            st.session_state.next_subs = {
+                position: "" for position in positions
+            }
 
-        st.rerun()
+            st.rerun()
+        else:
+            st.warning("Skriv in minst en spelare.")
+
 
 else:
     st.subheader("1. Spelare")
@@ -68,6 +72,10 @@ else:
         st.session_state.next_subs = {
             position: "" for position in positions
         }
+
+        if "position_editor" in st.session_state:
+            del st.session_state["position_editor"]
+
         st.rerun()
 
 
@@ -76,15 +84,11 @@ else:
 if st.session_state.players_locked and not st.session_state.counts_df.empty:
     st.subheader("2. Positionstabell")
 
-    def update_counts():
-        st.session_state.counts_df = st.session_state.position_editor
-
-    st.data_editor(
+    edited_df = st.data_editor(
         st.session_state.counts_df,
         use_container_width=True,
         num_rows="fixed",
         key="position_editor",
-        on_change=update_counts,
         column_config={
             position: st.column_config.NumberColumn(
                 position,
@@ -94,6 +98,8 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
             for position in positions
         }
     )
+
+    st.session_state.counts_df = edited_df.copy()
 
     st.info("Tryck på en siffra i tabellen och ändra antalet manuellt.")
 
