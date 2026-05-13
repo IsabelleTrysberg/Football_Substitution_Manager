@@ -1,9 +1,13 @@
 import streamlit as st
 import pandas as pd
+import json
+import os
 
 st.set_page_config(page_title="Fotbollsbyten", layout="wide")
 
 st.title("Fotbollsbyten och positioner")
+
+DATA_FILE = "match_data.json"
 
 positions = [
     "Målvakt",
@@ -12,6 +16,59 @@ positions = [
     "Vänster kant",
     "Topp"
 ]
+
+
+# ---------------- SPARA / LADDA DATA ----------------
+
+def save_data():
+    data = {
+        "players": st.session_state.players,
+        "players_locked": st.session_state.players_locked,
+        "counts_df": st.session_state.counts_df.to_dict(),
+        "next_subs": st.session_state.next_subs
+    }
+
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+
+def load_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        st.session_state.players = data.get("players", [])
+        st.session_state.players_locked = data.get("players_locked", False)
+
+        counts_data = data.get("counts_df", {})
+        if counts_data:
+            st.session_state.counts_df = pd.DataFrame(counts_data)
+        else:
+            st.session_state.counts_df = pd.DataFrame()
+
+        st.session_state.next_subs = data.get(
+            "next_subs",
+            {position: "" for position in positions}
+        )
+
+
+def reset_match():
+    st.session_state.players = []
+    st.session_state.players_locked = False
+    st.session_state.counts_df = pd.DataFrame()
+    st.session_state.next_subs = {position: "" for position in positions}
+
+    if "position_editor" in st.session_state:
+        del st.session_state["position_editor"]
+
+    for position in positions:
+        key = f"next_sub_{position}"
+        if key in st.session_state:
+            del st.session_state[key]
+
+    if os.path.exists(DATA_FILE):
+        os.remove(DATA_FILE)
+
 
 # ---------------- SESSION STATE ----------------
 
@@ -27,6 +84,18 @@ if "counts_df" not in st.session_state:
 if "next_subs" not in st.session_state:
     st.session_state.next_subs = {position: "" for position in positions}
 
+if "data_loaded" not in st.session_state:
+    load_data()
+    st.session_state.data_loaded = True
+
+
+# ---------------- STARTSIDESKNAPP ----------------
+
+if st.session_state.players_locked:
+    if st.button("Startsida / ny match", use_container_width=True):
+        reset_match()
+        st.rerun()
+
 
 # ---------------- SPELARE ----------------
 
@@ -39,7 +108,7 @@ if not st.session_state.players_locked:
         height=100
     )
 
-    if st.button("Klar", use_container_width=True):
+    if st.button("Starta match", use_container_width=True):
         players = [name.strip() for name in player_input.split(",") if name.strip()]
 
         if players:
@@ -56,32 +125,18 @@ if not st.session_state.players_locked:
                 position: "" for position in positions
             }
 
+            save_data()
             st.rerun()
         else:
             st.warning("Skriv in minst en spelare.")
 
 
-else:
+# ---------------- MATCHVY ----------------
+
+if st.session_state.players_locked and not st.session_state.counts_df.empty:
     st.subheader("1. Spelare")
     st.write(", ".join(st.session_state.players))
 
-    if st.button("Ändra spelare / ny match", use_container_width=True):
-        st.session_state.players_locked = False
-        st.session_state.players = []
-        st.session_state.counts_df = pd.DataFrame()
-        st.session_state.next_subs = {
-            position: "" for position in positions
-        }
-
-        if "position_editor" in st.session_state:
-            del st.session_state["position_editor"]
-
-        st.rerun()
-
-
-# ---------------- POSITIONSTABELL ----------------
-
-if st.session_state.players_locked and not st.session_state.counts_df.empty:
     st.subheader("2. Positionstabell")
 
     edited_df = st.data_editor(
@@ -103,12 +158,7 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
 
     st.info("Tryck på en siffra i tabellen och ändra antalet manuellt.")
 
-
-    # ---------------- KOMMANDE BYTE ----------------
-
     st.subheader("3. Kommande byte")
-
-    st.write("Skriv in vilka som ska spela på respektive position vid nästa byte.")
 
     for position in positions:
         st.session_state.next_subs[position] = st.text_input(
@@ -116,9 +166,6 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
             value=st.session_state.next_subs.get(position, ""),
             key=f"next_sub_{position}"
         )
-
-
-    # ---------------- ÖVERSIKT ----------------
 
     st.subheader("4. Översikt")
 
@@ -133,3 +180,5 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
         "match_oversikt.csv",
         "text/csv"
     )
+
+    save_data()
