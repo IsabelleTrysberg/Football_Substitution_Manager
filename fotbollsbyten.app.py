@@ -24,6 +24,9 @@ if "players_locked" not in st.session_state:
 if "counts_df" not in st.session_state:
     st.session_state.counts_df = pd.DataFrame()
 
+if "next_subs" not in st.session_state:
+    st.session_state.next_subs = {position: "" for position in positions}
+
 
 # ---------------- SPELARE ----------------
 
@@ -38,6 +41,7 @@ if not st.session_state.players_locked:
 
     if st.button("Klar", use_container_width=True):
         players = [name.strip() for name in player_input.split(",") if name.strip()]
+
         st.session_state.players = players
         st.session_state.players_locked = True
 
@@ -46,6 +50,10 @@ if not st.session_state.players_locked:
             index=players,
             columns=positions
         )
+
+        st.session_state.next_subs = {
+            position: "" for position in positions
+        }
 
         st.rerun()
 
@@ -57,6 +65,9 @@ else:
         st.session_state.players_locked = False
         st.session_state.players = []
         st.session_state.counts_df = pd.DataFrame()
+        st.session_state.next_subs = {
+            position: "" for position in positions
+        }
         st.rerun()
 
 
@@ -65,11 +76,15 @@ else:
 if st.session_state.players_locked and not st.session_state.counts_df.empty:
     st.subheader("2. Positionstabell")
 
-    edited_df = st.data_editor(
+    def update_counts():
+        st.session_state.counts_df = st.session_state.position_editor
+
+    st.data_editor(
         st.session_state.counts_df,
         use_container_width=True,
         num_rows="fixed",
         key="position_editor",
+        on_change=update_counts,
         column_config={
             position: st.column_config.NumberColumn(
                 position,
@@ -80,11 +95,26 @@ if st.session_state.players_locked and not st.session_state.counts_df.empty:
         }
     )
 
-    st.session_state.counts_df = edited_df
-
     st.info("Tryck på en siffra i tabellen och ändra antalet manuellt.")
 
-    st.subheader("3. Översikt")
+
+    # ---------------- KOMMANDE BYTE ----------------
+
+    st.subheader("3. Kommande byte")
+
+    st.write("Skriv in vilka som ska spela på respektive position vid nästa byte.")
+
+    for position in positions:
+        st.session_state.next_subs[position] = st.text_input(
+            label=position,
+            value=st.session_state.next_subs.get(position, ""),
+            key=f"next_sub_{position}"
+        )
+
+
+    # ---------------- ÖVERSIKT ----------------
+
+    st.subheader("4. Översikt")
 
     st.dataframe(
         st.session_state.counts_df,
